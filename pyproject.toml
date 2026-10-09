@@ -1,0 +1,27 @@
+[project]
+name = "ai-eng-m5"
+version = "0.1.0"
+description = "Agente ReAct con Memoria Persistente"
+readme = "README.md"
+authors = [
+    { name = "Cristian Díaz", email = "cristian.diaz@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "langchain-anthropic>=1.7.5",
+    "langgraph>=1.2.14",
+    "langgraph-checkpoint-sqlite>=3.1.1",
+    "pydantic>=2.14.0",
+    "python-dotenv>=1.2.4",
+]
+
+[project.scripts]
+agente = "agente.main:run"
+
+[tool.uv.build-backend]
+module-name = "agente"
+
+[build-system]
+requires = ["uv_build>=0.12.24,<0.13.0"]
+build-backend = "uv_build"
