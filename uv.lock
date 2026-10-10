@@ -9,6 +9,7 @@ source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
     { name = "langchain-anthropic" },
+    { name = "langchain-core" },
     { name = "langgraph" },
     { name = "langgraph-checkpoint-sqlite" },
     { name = "pydantic" },
@@ -19,6 +20,7 @@ dependencies = [
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.22.1" },
     { name = "langchain-anthropic", specifier = ">=1.7.5" },
+    { name = "langchain-core", specifier = ">=1.6.9" },
     { name = "langgraph", specifier = ">=1.2.14" },
     { name = "langgraph-checkpoint-sqlite", specifier = ">=3.1.1" },
     { name = "pydantic", specifier = ">=2.14.0" },
