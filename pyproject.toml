@@ -26,3 +26,17 @@ module-name = "agente"
 [build-system]
 requires = ["uv_build>=0.12.24,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integracion: llama a la API real de Anthropic (requiere ANTHROPIC_API_KEY)",
+]
+addopts = "-m 'not integracion'"
