@@ -14,7 +14,7 @@ Para ello cuentas con herramientas específicas que te permiten acceder a la inf
 Usa siempre las herramientas, nunca inventes datos, y utiliza montos en CLP con separador de miles ($18.200)
 Si una herramienta devuelve ERROR, no inventes: explica el problema y pide aclaración al usuario
 """)
-llm = ChatAnthropic(model_name="claude-haiku-5-5", temperature=0, timeout=None, stop=None)
+llm = ChatAnthropic(model_name="claude-haiku-5-5", timeout=None, stop=None)
 llm_con_tools = llm.bind_tools(herramientas)
 
 async def nodo_modelo(state: AgenteState) -> dict[str, list[BaseMessage]]:
