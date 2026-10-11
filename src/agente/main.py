@@ -19,7 +19,7 @@ async def main():
             {"messages": [HumanMessage(content="¿Cuántos pedidos tuvo María López y cuál fue el total?")]},
             config=CONFIG,
         )
-        print(resultado1["messages"][-1].content)
+        print(resultado1["messages"][-1].text)
         
         print("\n" + "=" * 80)
         print("Turno 2 (mismo thread_id): '¿Y Juan Pérez?'")
@@ -28,7 +28,7 @@ async def main():
             {"messages": [HumanMessage(content="¿Y Juan Pérez?")]},
             config=CONFIG,
         )
-        print(resultado2["messages"][-1].content)
+        print(resultado2["messages"][-1].text)
         
         return resultado1, resultado2
 
