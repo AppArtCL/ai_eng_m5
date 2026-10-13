@@ -1,9 +1,9 @@
 {
-  "generado": "2026-10-11T01:59:51",
+  "generado": "2026-10-13T15:43:39",
   "turnos": [
     {
-      "escenario": "memoria",
-      "thread_id": "memoria-523941ce",
+      "escenario": "multi_paso",
+      "thread_id": "memoria-5dbc06ce",
       "pregunta": "¿Cuántos pedidos tuvo María López y cuál fue el total?",
       "pasos": [
         {
@@ -54,16 +54,16 @@
         {
           "nodo": "modelo",
           "tipo": "ai",
-          "contenido": "María López tiene **6 pedidos**, con un monto total de **$31.400** CLP. Su último pedido fue el 3 de octubre de 2026.",
+          "contenido": "María López tuvo **6 pedidos** y el monto total gastado fue de **$31.400 CLP**. Su último pedido fue el 3 de octubre de 2026.",
           "tool_calls": [],
           "razonamiento": false
         }
       ],
-      "respuesta_final": "María López tiene **6 pedidos**, con un monto total de **$31.400** CLP. Su último pedido fue el 3 de octubre de 2026."
+      "respuesta_final": "María López tuvo **6 pedidos** y el monto total gastado fue de **$31.400 CLP**. Su último pedido fue el 3 de octubre de 2026."
     },
     {
       "escenario": "memoria",
-      "thread_id": "memoria-523941ce",
+      "thread_id": "memoria-5dbc06ce",
       "pregunta": "¿Y Juan Pérez?",
       "pasos": [
         {
@@ -114,16 +114,16 @@
         {
           "nodo": "modelo",
           "tipo": "ai",
-          "contenido": "Juan Pérez tiene **2 pedidos**, con un monto total de **$7.500** CLP. Su último pedido fue el 22 de julio de 2026.",
+          "contenido": "Juan Pérez tuvo **2 pedidos** por un total de **$7.500 CLP**. Su último pedido fue el 22 de julio de 2026.",
           "tool_calls": [],
           "razonamiento": false
         }
       ],
-      "respuesta_final": "Juan Pérez tiene **2 pedidos**, con un monto total de **$7.500** CLP. Su último pedido fue el 22 de julio de 2026."
+      "respuesta_final": "Juan Pérez tuvo **2 pedidos** por un total de **$7.500 CLP**. Su último pedido fue el 22 de julio de 2026."
     },
     {
       "escenario": "ciclo_retorno",
-      "thread_id": "ciclo-retorno-22345459",
+      "thread_id": "ciclo-retorno-6c207076",
       "pregunta": "¿Cuántos pedidos tuvo Roberto Sánchez?",
       "pasos": [
         {
@@ -154,12 +154,33 @@
         {
           "nodo": "modelo",
           "tipo": "ai",
-          "contenido": "No pude encontrar a ningún cliente llamado \"Roberto Sánchez\" en el sistema. ¿Podrías verificar si el nombre está escrito correctamente? Si tienes otro nombre, apellido o el ID del cliente, también puedo intentar buscarlo con eso.",
+          "contenido": "No encontré ningún cliente registrado con el nombre \"Roberto Sánchez\". ¿Podrías verificar que el nombre esté escrito correctamente? Si tienes otro dato, como el ID del cliente o un nombre alternativo, también puedo intentar buscarlo con eso.",
           "tool_calls": [],
           "razonamiento": false
         }
       ],
-      "respuesta_final": "No pude encontrar a ningún cliente llamado \"Roberto Sánchez\" en el sistema. ¿Podrías verificar si el nombre está escrito correctamente? Si tienes otro nombre, apellido o el ID del cliente, también puedo intentar buscarlo con eso."
+      "respuesta_final": "No encontré ningún cliente registrado con el nombre \"Roberto Sánchez\". ¿Podrías verificar que el nombre esté escrito correctamente? Si tienes otro dato, como el ID del cliente o un nombre alternativo, también puedo intentar buscarlo con eso."
+    },
+    {
+      "escenario": "persistencia_sqlite",
+      "thread_id": "memoria-5dbc06ce",
+      "pregunta": "De los dos clientes que te pregunté, ¿cuál gastó más en total?",
+      "pasos": [
+        {
+          "nodo": "usuario",
+          "tipo": "human",
+          "contenido": "De los dos clientes que te pregunté, ¿cuál gastó más en total?"
+        },
+        {
+          "nodo": "modelo",
+          "tipo": "ai",
+          "contenido": "María López gastó más en total: **$31.400 CLP** frente a los **$7.500 CLP** de Juan Pérez. La diferencia es de **$23.900 CLP**.",
+          "tool_calls": [],
+          "razonamiento": false
+        }
+      ],
+      "respuesta_final": "María López gastó más en total: **$31.400 CLP** frente a los **$7.500 CLP** de Juan Pérez. La diferencia es de **$23.900 CLP**.",
+      "mensajes_recuperados_de_sqlite": 12
     }
   ]
 }

@@ -1,0 +1,26 @@
+=== [multi_paso] thread_id=memoria-5dbc06ce
+[usuario] ¿Cuántos pedidos tuvo María López y cuál fue el total?
+[modelo] → llama buscar_cliente_por_nombre({'nombre': 'María López'})
+[herramientas] ← buscar_cliente_por_nombre: Cliente encontrado: María López con cliente_id=310
+[modelo] → llama buscar_pedidos({'cliente_id': 310})
+[herramientas] ← buscar_pedidos: pedidos=6, total=$31400, ultimo_pedido=2026-10-03
+[modelo] María López tuvo **6 pedidos** y el monto total gastado fue de **$31.400 CLP**. Su último pedido fue el 3 de octubre de 2026.
+
+=== [memoria] thread_id=memoria-5dbc06ce
+[usuario] ¿Y Juan Pérez?
+[modelo] → llama buscar_cliente_por_nombre({'nombre': 'Juan Pérez'})
+[herramientas] ← buscar_cliente_por_nombre: Cliente encontrado: Juan Pérez con cliente_id=205
+[modelo] → llama buscar_pedidos({'cliente_id': 205})
+[herramientas] ← buscar_pedidos: pedidos=2, total=$7500, ultimo_pedido=2026-07-22
+[modelo] Juan Pérez tuvo **2 pedidos** por un total de **$7.500 CLP**. Su último pedido fue el 22 de julio de 2026.
+
+=== [ciclo_retorno] thread_id=ciclo-retorno-6c207076
+[usuario] ¿Cuántos pedidos tuvo Roberto Sánchez?
+[modelo] → llama buscar_cliente_por_nombre({'nombre': 'Roberto Sánchez'})
+[herramientas] ← buscar_cliente_por_nombre: ERROR: No se encontró ningún cliente con el nombre 'Roberto Sánchez'. Verifica que esté escrito correctamente.
+[modelo] No encontré ningún cliente registrado con el nombre "Roberto Sánchez". ¿Podrías verificar que el nombre esté escrito correctamente? Si tienes otro dato, como el ID del cliente o un nombre alternativo, también puedo intentar buscarlo con eso.
+
+=== [persistencia_sqlite] thread_id=memoria-5dbc06ce
+    (conexión nueva a SQLite: se recuperaron 12 mensajes del thread)
+[usuario] De los dos clientes que te pregunté, ¿cuál gastó más en total?
+[modelo] María López gastó más en total: **$31.400 CLP** frente a los **$7.500 CLP** de Juan Pérez. La diferencia es de **$23.900 CLP**.

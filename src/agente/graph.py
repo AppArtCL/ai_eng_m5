@@ -5,7 +5,14 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, System
 from agente.tools import herramientas
 
 class AgenteState(MessagesState):
-    pass
+    """Estado del grafo: hereda de MessagesState la clave `messages`.
+
+    MessagesState define `messages: Annotated[list[AnyMessage], add_messages]`.
+    El reducer `add_messages` cumple el rol de `operator.add` (agrega cada mensaje
+    nuevo al historial en vez de reemplazarlo), y además evita duplicados: si
+    llega un mensaje con un `id` que ya existe, lo actualiza. Así cada nodo
+    devuelve solo sus mensajes nuevos y el diálogo completo se mantiene coherente.
+    """
 
 # Configuración del LLM
 SYSTEM_PROMPT = SystemMessage(content="""

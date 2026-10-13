@@ -66,6 +66,33 @@ async def test_ciclo_de_retorno_el_error_vuelve_al_modelo(agente_falso) -> None:
     assert isinstance(estado["messages"][-1], AIMessage)  # el grafo no se cayó
 
 
+async def test_persistencia_sobrevive_a_cerrar_la_conexion_sqlite(tmp_path, monkeypatch) -> None:
+    """El estado queda en el archivo .sqlite: una conexión nueva recupera el thread."""
+    import agente.graph
+    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+    from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+    monkeypatch.setattr(
+        agente.graph, "llm_con_tools",
+        GenericFakeChatModel(messages=iter([AIMessage("primera"), AIMessage("segunda")])),
+    )
+    db = str(tmp_path / "checkpoints.sqlite")
+    config = {"configurable": {"thread_id": "persistente"}}
+
+    async with AsyncSqliteSaver.from_conn_string(db) as saver:
+        app = construir_grafo().compile(checkpointer=saver)
+        await app.ainvoke({"messages": [HumanMessage("hola")]}, config)
+
+    # Conexión cerrada. Se abre otra y se recompila el grafo desde cero.
+    async with AsyncSqliteSaver.from_conn_string(db) as saver:
+        app = construir_grafo().compile(checkpointer=saver)
+        recuperado = await app.aget_state(config)
+        assert [m.content for m in recuperado.values["messages"]] == ["hola", "primera"]
+
+        estado = await app.ainvoke({"messages": [HumanMessage("¿te acuerdas?")]}, config)
+        assert len(estado["messages"]) == 4  # el turno nuevo se suma al historial guardado
+
+
 async def test_memoria_por_thread_id(agente_falso) -> None:
     app = agente_falso([AIMessage(content="uno"), AIMessage(content="dos"), AIMessage(content="tres")])
 
