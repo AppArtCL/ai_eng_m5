@@ -1,18 +1,20 @@
 {
-  "generado": "2026-10-13T15:43:39",
+  "generado": "2026-10-13T16:46:24",
   "turnos": [
     {
       "escenario": "multi_paso",
-      "thread_id": "memoria-5dbc06ce",
+      "thread_id": "memoria-c596cdd1",
       "pregunta": "¿Cuántos pedidos tuvo María López y cuál fue el total?",
       "pasos": [
         {
           "nodo": "usuario",
+          "clase": "HumanMessage",
           "tipo": "human",
           "contenido": "¿Cuántos pedidos tuvo María López y cuál fue el total?"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
           "contenido": "",
           "tool_calls": [
@@ -26,13 +28,15 @@
           "razonamiento": false
         },
         {
-          "nodo": "herramientas",
+          "nodo": "tools",
+          "clase": "ToolMessage",
           "tipo": "tool",
           "contenido": "Cliente encontrado: María López con cliente_id=310",
           "herramienta": "buscar_cliente_por_nombre"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
           "contenido": "",
           "tool_calls": [
@@ -46,33 +50,37 @@
           "razonamiento": false
         },
         {
-          "nodo": "herramientas",
+          "nodo": "tools",
+          "clase": "ToolMessage",
           "tipo": "tool",
           "contenido": "pedidos=6, total=$31400, ultimo_pedido=2026-10-03",
           "herramienta": "buscar_pedidos"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
-          "contenido": "María López tuvo **6 pedidos** y el monto total gastado fue de **$31.400 CLP**. Su último pedido fue el 3 de octubre de 2026.",
+          "contenido": "María López tuvo **6 pedidos**, por un total de **$31.400 CLP**. Su último pedido fue el 3 de octubre de 2026.",
           "tool_calls": [],
           "razonamiento": false
         }
       ],
-      "respuesta_final": "María López tuvo **6 pedidos** y el monto total gastado fue de **$31.400 CLP**. Su último pedido fue el 3 de octubre de 2026."
+      "respuesta_final": "María López tuvo **6 pedidos**, por un total de **$31.400 CLP**. Su último pedido fue el 3 de octubre de 2026."
     },
     {
       "escenario": "memoria",
-      "thread_id": "memoria-5dbc06ce",
+      "thread_id": "memoria-c596cdd1",
       "pregunta": "¿Y Juan Pérez?",
       "pasos": [
         {
           "nodo": "usuario",
+          "clase": "HumanMessage",
           "tipo": "human",
           "contenido": "¿Y Juan Pérez?"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
           "contenido": "",
           "tool_calls": [
@@ -86,13 +94,15 @@
           "razonamiento": false
         },
         {
-          "nodo": "herramientas",
+          "nodo": "tools",
+          "clase": "ToolMessage",
           "tipo": "tool",
           "contenido": "Cliente encontrado: Juan Pérez con cliente_id=205",
           "herramienta": "buscar_cliente_por_nombre"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
           "contenido": "",
           "tool_calls": [
@@ -106,33 +116,37 @@
           "razonamiento": false
         },
         {
-          "nodo": "herramientas",
+          "nodo": "tools",
+          "clase": "ToolMessage",
           "tipo": "tool",
           "contenido": "pedidos=2, total=$7500, ultimo_pedido=2026-07-22",
           "herramienta": "buscar_pedidos"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
-          "contenido": "Juan Pérez tuvo **2 pedidos** por un total de **$7.500 CLP**. Su último pedido fue el 22 de julio de 2026.",
+          "contenido": "Juan Pérez tuvo **2 pedidos**, por un total de **$7.500 CLP**. Su último pedido fue el 22 de julio de 2026.",
           "tool_calls": [],
           "razonamiento": false
         }
       ],
-      "respuesta_final": "Juan Pérez tuvo **2 pedidos** por un total de **$7.500 CLP**. Su último pedido fue el 22 de julio de 2026."
+      "respuesta_final": "Juan Pérez tuvo **2 pedidos**, por un total de **$7.500 CLP**. Su último pedido fue el 22 de julio de 2026."
     },
     {
       "escenario": "ciclo_retorno",
-      "thread_id": "ciclo-retorno-6c207076",
+      "thread_id": "ciclo-retorno-7ce1413f",
       "pregunta": "¿Cuántos pedidos tuvo Roberto Sánchez?",
       "pasos": [
         {
           "nodo": "usuario",
+          "clase": "HumanMessage",
           "tipo": "human",
           "contenido": "¿Cuántos pedidos tuvo Roberto Sánchez?"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
           "contenido": "",
           "tool_calls": [
@@ -146,33 +160,37 @@
           "razonamiento": false
         },
         {
-          "nodo": "herramientas",
+          "nodo": "tools",
+          "clase": "ToolMessage",
           "tipo": "tool",
           "contenido": "ERROR: No se encontró ningún cliente con el nombre 'Roberto Sánchez'. Verifica que esté escrito correctamente.",
           "herramienta": "buscar_cliente_por_nombre"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
-          "contenido": "No encontré ningún cliente registrado con el nombre \"Roberto Sánchez\". ¿Podrías verificar que el nombre esté escrito correctamente? Si tienes otro dato, como el ID del cliente o un nombre alternativo, también puedo intentar buscarlo con eso.",
+          "contenido": "No pude encontrar a ningún cliente llamado \"Roberto Sánchez\" en la base de datos. ¿Podrías verificar que el nombre esté escrito correctamente? Si tienes otro nombre o un identificador de cliente, también puedo intentar buscarlo.",
           "tool_calls": [],
           "razonamiento": false
         }
       ],
-      "respuesta_final": "No encontré ningún cliente registrado con el nombre \"Roberto Sánchez\". ¿Podrías verificar que el nombre esté escrito correctamente? Si tienes otro dato, como el ID del cliente o un nombre alternativo, también puedo intentar buscarlo con eso."
+      "respuesta_final": "No pude encontrar a ningún cliente llamado \"Roberto Sánchez\" en la base de datos. ¿Podrías verificar que el nombre esté escrito correctamente? Si tienes otro nombre o un identificador de cliente, también puedo intentar buscarlo."
     },
     {
       "escenario": "persistencia_sqlite",
-      "thread_id": "memoria-5dbc06ce",
+      "thread_id": "memoria-c596cdd1",
       "pregunta": "De los dos clientes que te pregunté, ¿cuál gastó más en total?",
       "pasos": [
         {
           "nodo": "usuario",
+          "clase": "HumanMessage",
           "tipo": "human",
           "contenido": "De los dos clientes que te pregunté, ¿cuál gastó más en total?"
         },
         {
-          "nodo": "modelo",
+          "nodo": "agent",
+          "clase": "AIMessage",
           "tipo": "ai",
           "contenido": "María López gastó más en total: **$31.400 CLP** frente a los **$7.500 CLP** de Juan Pérez. La diferencia es de **$23.900 CLP**.",
           "tool_calls": [],
@@ -182,5 +200,20 @@
       "respuesta_final": "María López gastó más en total: **$31.400 CLP** frente a los **$7.500 CLP** de Juan Pérez. La diferencia es de **$23.900 CLP**.",
       "mensajes_recuperados_de_sqlite": 12
     }
-  ]
+  ],
+  "persistencia_sqlite": {
+    "thread_id": "memoria-c596cdd1",
+    "disco_tras_sesion_1": {
+      "archivo": "checkpoints.sqlite",
+      "existe": true,
+      "tamano_kb": 1404.0,
+      "checkpoints_del_thread": 14
+    },
+    "verificacion": {
+      "lector": "SqliteSaver",
+      "mensajes_en_ultimo_checkpoint": 14,
+      "primera_pregunta": "¿Cuántos pedidos tuvo María López y cuál fue el total?",
+      "ultima_respuesta": "María López gastó más en total: **$31.400 CLP** frente a los **$7.500 CLP** de Juan Pérez. La diferencia es de **$23.900 CLP**."
+    }
+  }
 }

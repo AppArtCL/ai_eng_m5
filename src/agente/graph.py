@@ -4,7 +4,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, trim_messages
 from agente.tools import herramientas
 
-class AgenteState(MessagesState):
+class AgentState(MessagesState):
     """Estado del grafo: hereda de MessagesState la clave `messages`.
 
     MessagesState define `messages: Annotated[list[AnyMessage], add_messages]`.
@@ -23,7 +23,7 @@ Puedes reutilizar IDs obtenidos con herramientas antes en esta conversación.
 Si una herramienta devuelve ERROR, no inventes: explica el problema y pide aclaración al usuario
 """)
 llm = ChatAnthropic(model_name="claude-haiku-5-5", timeout=None, stop=None)
-llm_con_tools = llm.bind_tools(herramientas)
+llm_with_tools = llm.bind_tools(herramientas)
 
 def quitar_thinking_previo(mensajes: list[BaseMessage]) -> list[BaseMessage]:
     """Quita los bloques 'thinking' de los AIMessage de turnos anteriores.
@@ -48,7 +48,7 @@ def quitar_thinking_previo(mensajes: list[BaseMessage]) -> list[BaseMessage]:
     return limpios + mensajes[corte:]
 
 
-async def nodo_modelo(state: AgenteState) -> dict[str, list[BaseMessage]]:
+async def call_model(state: AgentState) -> dict[str, list[BaseMessage]]:
     """Le pasa los últimos 20 mensajes al LLM y devuelve su respuesta (que puede
     incluir tool_calls o ser la respuesta final)."""
     mensajes_recortados = trim_messages(
@@ -59,19 +59,21 @@ async def nodo_modelo(state: AgenteState) -> dict[str, list[BaseMessage]]:
         start_on="human",
     )
     mensajes_limpios = quitar_thinking_previo(mensajes_recortados)
-    respuesta = await llm_con_tools.ainvoke([SYSTEM_PROMPT, *mensajes_limpios])
+    respuesta = await llm_with_tools.ainvoke([SYSTEM_PROMPT, *mensajes_limpios])
     return {"messages": [respuesta]}
 
 def construir_grafo() -> StateGraph:
     """Arma el grafo ReAct (sin compilar; el checkpointer se agrega en main.py)."""
-    grafo = StateGraph(AgenteState)
-    grafo.add_node("modelo", nodo_modelo)
-    grafo.add_node("herramientas", ToolNode(tools=herramientas))
-    grafo.add_edge(START, "modelo")
-    grafo.add_conditional_edges(
-        "modelo",
-        tools_condition,
-        {"tools": "herramientas", END: END}
-    )
-    grafo.add_edge("herramientas", "modelo")
+    grafo = StateGraph(AgentState)
+    # Nodos
+    grafo.add_node("agent", call_model)  # LLM con las herramientas vinculadas (bind_tools)
+    # handle_tool_errors: si una herramienta lanza una excepción inesperada (por ejemplo,
+    # argumentos inválidos), el error vuelve al modelo como mensaje en vez de botar el grafo.
+    grafo.add_node("tools", ToolNode(tools=herramientas, handle_tool_errors=True))
+
+    # Aristas y ciclo ReAct
+    grafo.add_edge(START, "agent")
+    # tools_condition: si el último mensaje trae tool_calls va a "tools"; si no, a END.
+    grafo.add_conditional_edges("agent", tools_condition, {"tools": "tools", END: END})
+    grafo.add_edge("tools", "agent")  # retorno cíclico al agente
     return grafo

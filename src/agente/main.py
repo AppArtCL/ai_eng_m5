@@ -5,6 +5,9 @@ from typing import Any
 from datetime import datetime
 from uuid import uuid4
 
+from langgraph.checkpoint.sqlite import SqliteSaver
+# AsyncSqliteSaver es la versión asíncrona de SqliteSaver: el grafo usa ainvoke/astream,
+# que el SqliteSaver síncrono no soporta. Ambos escriben las mismas tablas en el archivo.
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langchain_core.messages import HumanMessage, BaseMessage, AIMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
@@ -16,8 +19,13 @@ RUTA_TRAZA = Path("traces/traza_ejecucion.json")
 RUTA_LOG = Path("traces/traza_ejecucion.log")
 
 def serializar_mensaje(m: BaseMessage) -> dict[str, Any]:
-    """Convierte un mensaje en un dict apto para JSON, para la traza."""
+    """Convierte un mensaje en un dict apto para JSON, para la traza.
+
+    `clase` guarda el tipo de mensaje de LangChain (HumanMessage, AIMessage,
+    ToolMessage), así la traza muestra la secuencia del ciclo ReAct.
+    """
     mensaje_json = {
+        "clase": type(m).__name__,
         "tipo": m.type,
         "contenido": m.text,
     }
@@ -61,19 +69,29 @@ async def ejecutar_turno(app: CompiledStateGraph, escenario: str, pregunta: str,
     }
 
 
-def guardar_traza(turnos: list[dict[str, Any]], ruta: Path) -> None:
-    """Guarda la traza de todos los turnos en un archivo JSON legible."""
+def guardar_traza(
+    turnos: list[dict[str, Any]], ruta: Path, persistencia: dict[str, Any] | None = None
+) -> None:
+    """Guarda la traza de todos los turnos en un archivo JSON legible.
+
+    Si se entrega `persistencia`, se agrega la evidencia de que los checkpoints
+    quedaron guardados en el archivo SQLite.
+    """
     ruta.parent.mkdir(parents=True, exist_ok=True)
-    traza = {
+    traza: dict[str, Any] = {
         "generado": datetime.now().isoformat(timespec="seconds"),
         "turnos": turnos,
     }
+    if persistencia is not None:
+        traza["persistencia_sqlite"] = persistencia
     with ruta.open("w", encoding="utf-8") as archivo:
         json.dump(traza, archivo, ensure_ascii=False, indent=2)
     print(f"\nTraza guardada en {ruta}")
 
 
-def guardar_log(turnos: list[dict[str, Any]], ruta: Path) -> None:
+def guardar_log(
+    turnos: list[dict[str, Any]], ruta: Path, persistencia: dict[str, Any] | None = None
+) -> None:
     """Escribe la traza ReAct en texto plano, un paso por línea, para leerla de corrido."""
     lineas: list[str] = []
     for turno in turnos:
@@ -83,18 +101,67 @@ def guardar_log(turnos: list[dict[str, Any]], ruta: Path) -> None:
                 f"    (conexión nueva a SQLite: se recuperaron "
                 f"{turno['mensajes_recuperados_de_sqlite']} mensajes del thread)"
             )
+        llamadas = sum(len(p.get("tool_calls", [])) for p in turno["pasos"])
+        lineas.append(f"    llamadas a herramientas en este turno: {llamadas}")
         for paso in turno["pasos"]:
+            prefijo = f"[{paso['nodo']}] {paso['clase']}"
             if paso.get("tool_calls"):
                 for llamada in paso["tool_calls"]:
-                    lineas.append(f"[{paso['nodo']}] → llama {llamada['nombre']}({llamada['args']})")
+                    lineas.append(f"{prefijo} (tool_calls) → {llamada['nombre']}({llamada['args']})")
             elif paso["tipo"] == "tool":
-                lineas.append(f"[{paso['nodo']}] ← {paso['herramienta']}: {paso['contenido']}")
+                lineas.append(f"{prefijo} ← {paso['herramienta']}: {paso['contenido']}")
+            elif paso["tipo"] == "ai":
+                lineas.append(f"{prefijo} (respuesta final) {paso['contenido']}")
             else:
-                lineas.append(f"[{paso['nodo']}] {paso['contenido']}")
+                lineas.append(f"{prefijo} {paso['contenido']}")
         lineas.append("")
+    if persistencia is not None:
+        disco = persistencia["disco_tras_sesion_1"]
+        lectura = persistencia["verificacion"]
+        lineas += [
+            f"=== [evidencia_persistencia] thread_id={persistencia['thread_id']}",
+            f"    Al cerrar la sesión 1: {disco['archivo']} existe en disco "
+            f"({disco['tamano_kb']} KB) con {disco['checkpoints_del_thread']} checkpoints del thread.",
+            f"    Releído al final con {lectura['lector']}: el último checkpoint tiene "
+            f"{lectura['mensajes_en_ultimo_checkpoint']} mensajes.",
+            f"    Primera pregunta guardada: {lectura['primera_pregunta']}",
+            f"    Última respuesta guardada: {lectura['ultima_respuesta']}",
+            "",
+        ]
     ruta.parent.mkdir(parents=True, exist_ok=True)
     ruta.write_text("\n".join(lineas), encoding="utf-8")
     print(f"Log guardado en {ruta}")
+
+
+async def evidencia_en_disco(checkpointer: AsyncSqliteSaver, thread_id: str) -> dict[str, Any]:
+    """Comprueba que el archivo SQLite existe y cuenta los checkpoints guardados del thread."""
+    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
+    checkpoints = [c async for c in checkpointer.alist(config)]
+    archivo = Path(RUTA_DB)
+    return {
+        "archivo": RUTA_DB,
+        "existe": archivo.exists(),
+        "tamano_kb": round(archivo.stat().st_size / 1024, 1) if archivo.exists() else 0,
+        "checkpoints_del_thread": len(checkpoints),
+    }
+
+
+def verificar_con_sqlite_saver(thread_id: str) -> dict[str, Any]:
+    """Relee el último checkpoint del thread con el SqliteSaver síncrono.
+
+    Demuestra que lo que escribió AsyncSqliteSaver quedó en disco en el formato
+    estándar de LangGraph, legible por cualquier SqliteSaver.
+    """
+    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
+    with SqliteSaver.from_conn_string(RUTA_DB) as lector:
+        ultimo = lector.get_tuple(config)
+    mensajes = ultimo.checkpoint["channel_values"].get("messages", []) if ultimo else []
+    return {
+        "lector": "SqliteSaver",
+        "mensajes_en_ultimo_checkpoint": len(mensajes),
+        "primera_pregunta": mensajes[0].text if mensajes else None,
+        "ultima_respuesta": mensajes[-1].text if mensajes else None,
+    }
 
 
 async def main() -> None:
@@ -134,6 +201,11 @@ async def main() -> None:
                 thread_ciclo,
             ),
         ]
+        disco = await evidencia_en_disco(checkpointer, thread_memoria)
+        print(
+            f"\n({disco['archivo']} existe en disco: {disco['tamano_kb']} KB, "
+            f"{disco['checkpoints_del_thread']} checkpoints guardados para {thread_memoria})"
+        )
     # Aquí la conexión ya está cerrada: lo único que queda es el archivo .sqlite.
 
     # Sesión 2: conexión nueva y grafo recompilado, mismo thread_id.
@@ -154,8 +226,16 @@ async def main() -> None:
         turno_persistencia["mensajes_recuperados_de_sqlite"] = recuperados
         turnos.append(turno_persistencia)
 
-    guardar_traza(turnos, RUTA_TRAZA)
-    guardar_log(turnos, RUTA_LOG)
+    # Verificación final: se relee el thread desde el archivo con SqliteSaver.
+    lectura = await asyncio.to_thread(verificar_con_sqlite_saver, thread_memoria)
+    print(
+        f"(Verificación con SqliteSaver: el último checkpoint de {thread_memoria} "
+        f"tiene {lectura['mensajes_en_ultimo_checkpoint']} mensajes)"
+    )
+    persistencia = {"thread_id": thread_memoria, "disco_tras_sesion_1": disco, "verificacion": lectura}
+
+    guardar_traza(turnos, RUTA_TRAZA, persistencia)
+    guardar_log(turnos, RUTA_LOG, persistencia)
 
 
 def run() -> None:

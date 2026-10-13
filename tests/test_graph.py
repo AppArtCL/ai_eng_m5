@@ -2,7 +2,7 @@
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.graph import MessagesState
 
-from agente.graph import AgenteState, construir_grafo, quitar_thinking_previo
+from agente.graph import AgentState, construir_grafo, quitar_thinking_previo
 from conftest import llamada
 
 THINKING = {"type": "thinking", "thinking": "", "signature": "firma"}
@@ -10,16 +10,16 @@ THINKING = {"type": "thinking", "thinking": "", "signature": "firma"}
 
 def test_estado_hereda_de_messages_state() -> None:
     # MessagesState es un TypedDict: no admite issubclass, así que se revisa la base declarada.
-    assert MessagesState in AgenteState.__orig_bases__
-    assert "messages" in AgenteState.__annotations__
+    assert MessagesState in AgentState.__orig_bases__
+    assert "messages" in AgentState.__annotations__
 
 
 def test_grafo_tiene_el_ciclo_react() -> None:
     aristas = {(a.source, a.target) for a in construir_grafo().compile().get_graph().edges}
-    assert ("__start__", "modelo") in aristas
-    assert ("modelo", "herramientas") in aristas
-    assert ("herramientas", "modelo") in aristas  # el ciclo
-    assert ("modelo", "__end__") in aristas
+    assert ("__start__", "agent") in aristas
+    assert ("agent", "tools") in aristas
+    assert ("tools", "agent") in aristas  # el ciclo
+    assert ("agent", "__end__") in aristas
 
 
 def test_quitar_thinking_limpia_turnos_anteriores_y_conserva_el_actual() -> None:
@@ -36,6 +36,7 @@ def test_quitar_thinking_limpia_turnos_anteriores_y_conserva_el_actual() -> None
 
 
 async def test_multi_paso_encadena_dos_herramientas(agente_falso) -> None:
+    """Exige dos llamadas sucesivas: AIMessage → ToolMessage → AIMessage → ToolMessage → AIMessage."""
     app = agente_falso([
         llamada("buscar_cliente_por_nombre", {"nombre": "María López"}, "t1"),
         llamada("buscar_pedidos", {"cliente_id": 310}, "t2"),
@@ -45,11 +46,25 @@ async def test_multi_paso_encadena_dos_herramientas(agente_falso) -> None:
 
     estado = await app.ainvoke({"messages": [HumanMessage("¿Pedidos de María López?")]}, config)
 
-    resultados = [m.content for m in estado["messages"] if isinstance(m, ToolMessage)]
-    assert resultados == [
-        "Cliente encontrado: María López con cliente_id=310",
-        "pedidos=6, total=$31400, ultimo_pedido=2026-10-03",
+    mensajes = estado["messages"]
+
+    # La secuencia completa del ciclo ReAct: dos llamadas sucesivas antes de responder.
+    assert [type(m).__name__ for m in mensajes] == [
+        "HumanMessage",
+        "AIMessage",   # tool_calls → buscar_cliente_por_nombre
+        "ToolMessage",
+        "AIMessage",   # tool_calls → buscar_pedidos (usa el dato anterior)
+        "ToolMessage",
+        "AIMessage",   # respuesta final, sin tool_calls → END
     ]
+    assert mensajes[1].tool_calls[0]["name"] == "buscar_cliente_por_nombre"
+    assert mensajes[3].tool_calls[0]["name"] == "buscar_pedidos"
+    assert mensajes[5].tool_calls == []
+
+    # El ID que devolvió la primera herramienta es el argumento de la segunda.
+    assert "cliente_id=310" in mensajes[2].content
+    assert mensajes[3].tool_calls[0]["args"] == {"cliente_id": 310}
+    assert mensajes[4].content == "pedidos=6, total=$31400, ultimo_pedido=2026-10-03"
 
 
 async def test_ciclo_de_retorno_el_error_vuelve_al_modelo(agente_falso) -> None:
@@ -73,7 +88,7 @@ async def test_persistencia_sobrevive_a_cerrar_la_conexion_sqlite(tmp_path, monk
     from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
     monkeypatch.setattr(
-        agente.graph, "llm_con_tools",
+        agente.graph, "llm_with_tools",
         GenericFakeChatModel(messages=iter([AIMessage("primera"), AIMessage("segunda")])),
     )
     db = str(tmp_path / "checkpoints.sqlite")

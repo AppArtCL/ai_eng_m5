@@ -25,7 +25,7 @@ def agente_falso(monkeypatch: pytest.MonkeyPatch) -> Callable[[list[AIMessage]],
     """
     def _crear(respuestas: list[AIMessage]) -> CompiledStateGraph:
         modelo_falso = GenericFakeChatModel(messages=iter(respuestas))
-        monkeypatch.setattr(agente.graph, "llm_con_tools", modelo_falso)
+        monkeypatch.setattr(agente.graph, "llm_with_tools", modelo_falso)
         return construir_grafo().compile(checkpointer=InMemorySaver())
 
     return _crear
